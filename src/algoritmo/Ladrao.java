@@ -58,10 +58,11 @@ public class Ladrao extends ProgramaLadrao {
 		Boolean isObstacleNear = checkObstaclesNear(vision);
 		Boolean isThiefNear = checkThiefNear(vision);
 
+//		If this is a new position,
 		if (lastPosition != null &&
 				position.x == lastPosition.x &&
 				position.y == lastPosition.y)
-			counter = 7;
+			counter = 5;
 
 		lastPosition = position;
 
@@ -78,14 +79,103 @@ public class Ladrao extends ProgramaLadrao {
 			return chaseSaverByVision(vision);
 		}
 
-//		System.out.println("NO SAVER DETECTED, EVALUATING MOVE");
+		if (isSaverNearBySmell && counter == 0) {
+			System.out.println("SAVER NEAR BY SMELL");
+			return chaseSaverBySmell(vision);
+		}
+
+		if (isThiefNear) {
+			return chaseThief(vision);
+		}
+
 
 		return evaluateMove();
 
 	}
 
+	private int chaseThief(int[] vision) {
+		if (isObjectOnDirection(vision, MAP_UP, THIEF)) {
+			if (isObstacleOnDirection(vision, MAP_UP)) {
+				evaluateMove();
+			} else {
+				return MOVE_UP;
+			}
+		}
+
+		if (isObjectOnDirection(vision, MAP_RIGHT, THIEF)) {
+			if (isObstacleOnDirection(vision, MAP_RIGHT)) {
+				evaluateMove();
+			} else {
+				return MOVE_RIGHT;
+			}
+		}
+
+		if (isObjectOnDirection(vision, MAP_DOWN, THIEF)) {
+			if (isObstacleOnDirection(vision, MAP_DOWN)) {
+				evaluateMove();
+			} else {
+				return MAP_DOWN;
+			}
+		}
+
+		if (isObjectOnDirection(vision, MAP_LEFT, THIEF)) {
+			if (isObstacleOnDirection(vision, MAP_LEFT)) {
+				evaluateMove();
+			} else {
+				return MAP_LEFT;
+			}
+		}
+
+		return evaluateMove();
+	}
+
+	private int chaseSaverBySmell(int[] vision) {
+		int smallerSmell = Integer.MAX_VALUE;
+		int smellPosition = 100;
+
+//		Getting the position with the smallest smell (the saver is nearest)
+		for (int i = 0; i < vision.length; i++) {
+			if (vision[i] != 0 && vision[i] != -1 && vision[i] < smallerSmell) {
+				smallerSmell = vision[i];
+				smellPosition = i;
+			}
+		}
+
+		if (smellPosition == 0 || smellPosition == 1) {
+//			Is an empty cell?
+			if (vision[MAP_UP] == 0)
+				return MOVE_UP;
+			else
+				return MOVE_LEFT;
+		}
+
+		if (smellPosition == 2 || smellPosition == 4) {
+			if (vision[MAP_RIGHT] == 0)
+				return MOVE_RIGHT;
+			else
+				return MOVE_UP;
+		}
+
+		if (smellPosition == 6 || smellPosition == 7) {
+			if (vision[MAP_DOWN] == 0)
+				return MOVE_DOWN;
+			else
+				return MOVE_RIGHT;
+		}
+
+		if (smellPosition == 3 || smellPosition == 5) {
+			if (vision[MAP_LEFT] == 0)
+				return MOVE_LEFT;
+			else
+				return MOVE_DOWN;
+		}
+
+
+		return evaluateMove();
+	}
+
 	private int chaseSaverByVision(int[] vision) {
-		if (canISeeASaverOnDirection(vision, MAP_UP)) {
+		if (isObjectOnDirection(vision, MAP_UP, SAVER)) {
 			if (isObstacleOnDirection(vision, MAP_UP)) {
 				// Improvement idea: Instead of this **exploratory function**, we
 				// could do a search for the shortest path to the thief.
@@ -94,7 +184,7 @@ public class Ladrao extends ProgramaLadrao {
 				System.out.println("CHASING SAVER UP");
 				return MOVE_UP;
 			}
-		} else if (canISeeASaverOnDirection(vision, MAP_RIGHT)) {
+		} else if (isObjectOnDirection(vision, MAP_RIGHT, SAVER)) {
 			if (isObstacleOnDirection(vision, MAP_RIGHT)) {
 				// Improvement idea: Instead of this **exploratory function**, we
 				// could do a search for the shortest path to the thief.
@@ -103,7 +193,7 @@ public class Ladrao extends ProgramaLadrao {
 				System.out.println("CHASING SAVER RIGHT");
 				return MOVE_RIGHT;
 			}
-		} else if (canISeeASaverOnDirection(vision, MAP_DOWN)) {
+		} else if (isObjectOnDirection(vision, MAP_DOWN, SAVER)) {
 			if (isObstacleOnDirection(vision, MAP_DOWN)) {
 				// Improvement idea: Instead of this **exploratory function**, we
 				// could do a search for the shortest path to the thief.
@@ -112,7 +202,7 @@ public class Ladrao extends ProgramaLadrao {
 				System.out.println("CHASING SAVER DOWN");
 				return MOVE_DOWN;
 			}
-		} else if (canISeeASaverOnDirection(vision, MAP_LEFT)) {
+		} else if (isObjectOnDirection(vision, MAP_LEFT, SAVER)) {
 			if (isObstacleOnDirection(vision, MAP_LEFT)) {
 				// Improvement idea: Instead of this **exploratory function**, we
 				// could do a search for the shortest path to the thief.
@@ -182,32 +272,32 @@ public class Ladrao extends ProgramaLadrao {
 		return x > 0 && x < map.length - 1 && y > 0 && y < map.length - 1;
 	}
 
-	private boolean canISeeASaverOnDirection(int[] vision, int direction) {
+	private boolean isObjectOnDirection(int[] vision, int direction, int object) {
 		System.out.println("I SEE A SAVER");
 		if (direction == MAP_UP) {
-			return (vision[2] >= SAVER && vision[2] <= THIEF) ||
-					vision[3] == SAVER ||
-					vision[4] == SAVER ||
-					vision[8] == SAVER ||
-					vision[9] == SAVER;
+			return  vision[2] >= object ||
+					vision[3] == object ||
+					vision[4] == object ||
+					vision[8] == object ||
+					vision[9] == object;
 		} else if (direction == MAP_RIGHT) {
-			return vision[22] == SAVER ||
-					vision[23] == SAVER ||
-					vision[18] == SAVER ||
-					vision[17] == SAVER ||
-					vision[13] == SAVER;
+			return vision[22] == object ||
+					vision[23] == object ||
+					vision[18] == object ||
+					vision[17] == object ||
+					vision[13] == object;
 		} else if (direction == MAP_DOWN) {
-			return vision[14] == SAVER ||
-					vision[15] == SAVER ||
-					vision[19] == SAVER ||
-					vision[20] == SAVER ||
-					vision[21] == SAVER;
+			return vision[14] == object ||
+					vision[15] == object ||
+					vision[19] == object ||
+					vision[20] == object ||
+					vision[21] == object;
 		} else if (direction == MAP_LEFT) {
-			return  vision[0] == SAVER ||
-					vision[1] == SAVER ||
-					vision[5] == SAVER ||
-					vision[6] == SAVER ||
-					vision[10] == SAVER;
+			return  vision[0] == object ||
+					vision[1] == object ||
+					vision[5] == object ||
+					vision[6] == object ||
+					vision[10] == object;
 		}
 
 		return false;

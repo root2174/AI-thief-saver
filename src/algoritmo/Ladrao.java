@@ -1,6 +1,7 @@
 package algoritmo;
 
 import java.awt.*;
+import java.util.Arrays;
 
 public class Ladrao extends ProgramaLadrao {
 
@@ -81,7 +82,7 @@ public class Ladrao extends ProgramaLadrao {
 
 		if (isSaverNearBySmell && counter == 0) {
 			System.out.println("SAVER NEAR BY SMELL");
-			return chaseSaverBySmell(vision);
+			return chaseSaverBySmell(smell);
 		}
 
 		if (isThiefNear) {
@@ -93,6 +94,11 @@ public class Ladrao extends ProgramaLadrao {
 
 	}
 
+	/**
+	 * this function will chase another thief so they can team up
+	 * @param vision the thief's vision
+	 * @return the thief's movement
+	 */
 	private int chaseThief(int[] vision) {
 		if (isObjectOnDirection(vision, MAP_UP, THIEF)) {
 			if (isObstacleOnDirection(vision, MAP_UP)) {
@@ -129,14 +135,14 @@ public class Ladrao extends ProgramaLadrao {
 		return evaluateMove();
 	}
 
-	private int chaseSaverBySmell(int[] vision) {
+	private int chaseSaverBySmell(int[] smell) {
 		int smallerSmell = Integer.MAX_VALUE;
 		int smellPosition = 100;
 
 //		Getting the position with the smallest smell (the saver is nearest)
-		for (int i = 0; i < vision.length; i++) {
-			if (vision[i] != 0 && vision[i] != -1 && vision[i] < smallerSmell) {
-				smallerSmell = vision[i];
+		for (int i = 0; i < smell.length; i++) {
+			if (smell[i] != 0 && smell[i] != -1 && smell[i] < smallerSmell) {
+				smallerSmell = smell[i];
 				smellPosition = i;
 			}
 		}
@@ -273,9 +279,8 @@ public class Ladrao extends ProgramaLadrao {
 	}
 
 	private boolean isObjectOnDirection(int[] vision, int direction, int object) {
-		System.out.println("I SEE A SAVER");
 		if (direction == MAP_UP) {
-			return  vision[2] >= object ||
+			return  vision[2] == object ||
 					vision[3] == object ||
 					vision[4] == object ||
 					vision[8] == object ||

@@ -1,9 +1,15 @@
 package algoritmo;
 
 import java.awt.*;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class Ladrao extends ProgramaLadrao {
+
+	static int thiefExp1 = 0;
+	static int thiefExp2 = 0;
+	static int thiefExp3 = 0;
+	static int thiefExp4 = 0;
 
 	// Map to be used in the future to store information about the game.
 	private final int[][] map = new int[30][30];
@@ -41,9 +47,14 @@ public class Ladrao extends ProgramaLadrao {
 	int[] smell = new int[8];
 
 	int counter = 0;
+	int thiefIndex = -1;
 
 
 	public int acao() {
+		thiefIndex++;
+		if (thiefIndex > 3) {
+			thiefIndex = 0;
+		}
 
 		position = sensor.getPosicao();
 
@@ -71,17 +82,14 @@ public class Ladrao extends ProgramaLadrao {
 			counter--;
 
 		if (isSaverNearBy && counter == 0) {
-			System.out.println("SAVER IS NEAR BY");
 			return steal(vision);
 		}
 
 		if (isSaverNearByVision && counter == 0) {
-			System.out.println("SAVER NEAR BY VISION");
 			return chaseSaverByVision(vision);
 		}
 
 		if (isSaverNearBySmell && counter == 0) {
-			System.out.println("SAVER NEAR BY SMELL");
 			return chaseSaverBySmell(smell);
 		}
 
@@ -94,13 +102,21 @@ public class Ladrao extends ProgramaLadrao {
 
 	}
 
-	/**
-	 * this function will chase another thief so they can team up
-	 * @param vision the thief's vision
-	 * @return the thief's movement
-	 */
 	private int chaseThief(int[] vision) {
-		if (isObjectOnDirection(vision, MAP_UP, THIEF)) {
+		ArrayList<Integer> thievesInVision = getAllThievesNear(vision);
+		int myExp = getThiefExp(thiefIndex);
+		Optional<Integer> maxThiefExp = thievesInVision
+				.stream()
+				.map(this::getThiefExp)
+				.max(Integer::compareTo);
+
+		if (maxThiefExp.isPresent()) {
+			if (myExp > maxThiefExp.get()) {
+				return evaluateMove();
+			}
+		}
+
+		if (isThiefOnDirection(vision, MAP_UP)) {
 			if (isObstacleOnDirection(vision, MAP_UP)) {
 				evaluateMove();
 			} else {
@@ -108,7 +124,7 @@ public class Ladrao extends ProgramaLadrao {
 			}
 		}
 
-		if (isObjectOnDirection(vision, MAP_RIGHT, THIEF)) {
+		if (isThiefOnDirection(vision, MAP_RIGHT)) {
 			if (isObstacleOnDirection(vision, MAP_RIGHT)) {
 				evaluateMove();
 			} else {
@@ -116,7 +132,7 @@ public class Ladrao extends ProgramaLadrao {
 			}
 		}
 
-		if (isObjectOnDirection(vision, MAP_DOWN, THIEF)) {
+		if (isThiefOnDirection(vision, MAP_DOWN)) {
 			if (isObstacleOnDirection(vision, MAP_DOWN)) {
 				evaluateMove();
 			} else {
@@ -124,7 +140,7 @@ public class Ladrao extends ProgramaLadrao {
 			}
 		}
 
-		if (isObjectOnDirection(vision, MAP_LEFT, THIEF)) {
+		if (isThiefOnDirection(vision, MAP_LEFT)) {
 			if (isObstacleOnDirection(vision, MAP_LEFT)) {
 				evaluateMove();
 			} else {
@@ -136,6 +152,7 @@ public class Ladrao extends ProgramaLadrao {
 	}
 
 	private int chaseSaverBySmell(int[] smell) {
+		increaseThiefExp(thiefIndex);
 		int smallerSmell = Integer.MAX_VALUE;
 		int smellPosition = 100;
 
@@ -148,7 +165,7 @@ public class Ladrao extends ProgramaLadrao {
 		}
 
 		if (smellPosition == 0 || smellPosition == 1) {
-//			Is an empty cell?
+//			Is it an empty cell?
 			if (vision[MAP_UP] == 0)
 				return MOVE_UP;
 			else
@@ -181,13 +198,13 @@ public class Ladrao extends ProgramaLadrao {
 	}
 
 	private int chaseSaverByVision(int[] vision) {
+		increaseThiefExp(thiefIndex);
 		if (isObjectOnDirection(vision, MAP_UP, SAVER)) {
 			if (isObstacleOnDirection(vision, MAP_UP)) {
 				// Improvement idea: Instead of this **exploratory function**, we
 				// could do a search for the shortest path to the thief.
 				return evaluateMove();
 			} else {
-				System.out.println("CHASING SAVER UP");
 				return MOVE_UP;
 			}
 		} else if (isObjectOnDirection(vision, MAP_RIGHT, SAVER)) {
@@ -196,7 +213,6 @@ public class Ladrao extends ProgramaLadrao {
 				// could do a search for the shortest path to the thief.
 				return evaluateMove();
 			} else {
-				System.out.println("CHASING SAVER RIGHT");
 				return MOVE_RIGHT;
 			}
 		} else if (isObjectOnDirection(vision, MAP_DOWN, SAVER)) {
@@ -205,7 +221,6 @@ public class Ladrao extends ProgramaLadrao {
 				// could do a search for the shortest path to the thief.
 				return evaluateMove();
 			} else {
-				System.out.println("CHASING SAVER DOWN");
 				return MOVE_DOWN;
 			}
 		} else if (isObjectOnDirection(vision, MAP_LEFT, SAVER)) {
@@ -214,7 +229,6 @@ public class Ladrao extends ProgramaLadrao {
 				// could do a search for the shortest path to the thief.
 				return evaluateMove();
 			} else {
-				System.out.println("CHASING SAVER LEFT");
 				return MOVE_LEFT;
 			}
 		} else {
@@ -241,7 +255,6 @@ public class Ladrao extends ProgramaLadrao {
 				weightUp < weightRight &&
 				weightUp < weightDown &&
 				weightUp < weightLeft) {
-			System.out.println("EVALUATED UP");
 			return MOVE_UP;
 		}
 
@@ -249,7 +262,6 @@ public class Ladrao extends ProgramaLadrao {
 				weightRight < weightUp &&
 				weightRight < weightDown &&
 				weightRight < weightLeft) {
-			System.out.println("EVALUATED RIGHT");
 			return MOVE_RIGHT;
 		}
 
@@ -257,7 +269,6 @@ public class Ladrao extends ProgramaLadrao {
 				weightDown < weightUp &&
 				weightDown < weightRight &&
 				weightDown < weightLeft) {
-			System.out.println("EVALUATED DOWN");
 			return MOVE_DOWN;
 		}
 
@@ -265,7 +276,6 @@ public class Ladrao extends ProgramaLadrao {
 				weightLeft < weightUp &&
 				weightLeft < weightRight &&
 				weightLeft < weightDown) {
-			System.out.println("EVALUATED LEFT");
 			return MOVE_LEFT;
 		}
 
@@ -308,6 +318,36 @@ public class Ladrao extends ProgramaLadrao {
 		return false;
 	}
 
+	private boolean isThiefOnDirection(int[] vision, int direction) {
+		if (direction == MAP_UP) {
+			return  vision[2] >= THIEF ||
+					vision[3] >= THIEF ||
+					vision[4] >= THIEF ||
+					vision[8] >= THIEF ||
+					vision[9] >= THIEF;
+		} else if (direction == MAP_RIGHT) {
+			return vision[22] >= THIEF ||
+					vision[23] >= THIEF ||
+					vision[18] >= THIEF ||
+					vision[17] >= THIEF ||
+					vision[13] >= THIEF;
+		} else if (direction == MAP_DOWN) {
+			return vision[14] >= THIEF ||
+					vision[15] >= THIEF ||
+					vision[19] >= THIEF ||
+					vision[20] >= THIEF ||
+					vision[21] >= THIEF;
+		} else if (direction == MAP_LEFT) {
+			return  vision[0] >= THIEF ||
+					vision[1] >= THIEF ||
+					vision[5] >= THIEF ||
+					vision[6] >= THIEF ||
+					vision[10] >= THIEF;
+		}
+
+		return false;
+	}
+
 	/**
 	 * This function will increase by 1 the current position of the thief
 	 * on the map
@@ -324,7 +364,8 @@ public class Ladrao extends ProgramaLadrao {
 	 * @return the thief's next movement
 	 */
 	private int steal(int[] vision) {
-		System.out.println("STEALING FROM SAVER");
+		increaseThiefExp(thiefIndex);
+
 		if (vision[MAP_UP] == SAVER) {
 			return MOVE_UP;
 		}
@@ -349,6 +390,42 @@ public class Ladrao extends ProgramaLadrao {
 				vision[MAP_LEFT] == SAVER ||
 				vision[MAP_RIGHT] == SAVER ||
 				vision[MAP_DOWN] == SAVER;
+	}
+
+	private void increaseThiefExp(int thiefIndex) {
+		switch (thiefIndex) {
+			case 0:
+				thiefExp1++;
+				break;
+			case 1:
+				thiefExp2++;
+				break;
+			case 2:
+				thiefExp3++;
+				break;
+			case 3:
+				thiefExp4++;
+				break;
+		}
+	}
+
+	private int getThiefExp(int thiefIndex) {
+		switch (thiefIndex) {
+			case 0:
+			case 200:
+				return thiefExp1;
+			case 1:
+			case 210:
+				return thiefExp2;
+			case 2:
+			case 220:
+				return thiefExp3;
+			case 3:
+			case 230:
+				return thiefExp4;
+			default:
+				return 0;
+		}
 	}
 
 
@@ -377,11 +454,23 @@ public class Ladrao extends ProgramaLadrao {
 
 	private Boolean checkThiefNear(int[] vision) {
 		for (int j : vision) {
-			if (j == THIEF)
+			if (j >= THIEF)
 				return true;
 		}
 
 		return false;
+	}
+
+	private ArrayList<Integer> getAllThievesNear(int[] vision) {
+		ArrayList<Integer> thieves = new ArrayList<>(4);
+
+		for (int j : vision) {
+			if (j >= THIEF) {
+				thieves.add(j);
+			}
+		}
+
+		return thieves;
 	}
 
 	private Boolean checkObstaclesNear(int[] vision) {
@@ -405,10 +494,6 @@ public class Ladrao extends ProgramaLadrao {
 		for (int i = 0; i < vision.length; i++) {
 			if (vision[i] >= SAVER && vision[i] <= THIEF) {
 				vision[i] = SAVER;
-			}
-
-			if (vision[i] >= THIEF) {
-				vision[i] = THIEF;
 			}
 		}
 		return vision;

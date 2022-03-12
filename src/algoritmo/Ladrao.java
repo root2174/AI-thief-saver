@@ -67,7 +67,6 @@ public class Ladrao extends ProgramaLadrao {
 		Boolean isSaverNearBy = checkSaverNearBy(vision);
 		Boolean isSaverNearByVision = checkSaverNearByVision(vision);
 		Boolean isSaverNearBySmell = checkSaverBySmell(smell);
-		Boolean isObstacleNear = checkObstaclesNear(vision);
 		Boolean isThiefNear = checkThiefNear(vision);
 
 //		If this is a new position,
@@ -96,8 +95,6 @@ public class Ladrao extends ProgramaLadrao {
 		if (isThiefNear) {
 			return chaseThief(vision);
 		}
-
-
 		return evaluateMove();
 
 	}
@@ -111,7 +108,7 @@ public class Ladrao extends ProgramaLadrao {
 				.max(Integer::compareTo);
 
 		if (maxThiefExp.isPresent()) {
-			if (myExp > maxThiefExp.get()) {
+			if (myExp >= maxThiefExp.get()) {
 				return evaluateMove();
 			}
 		}
@@ -255,28 +252,45 @@ public class Ladrao extends ProgramaLadrao {
 				weightUp < weightRight &&
 				weightUp < weightDown &&
 				weightUp < weightLeft) {
-			return MOVE_UP;
+			if (isObstacleOnDirection(vision, MAP_UP)) {
+				return checkEmptyCells(vision);
+			} else {
+				return MOVE_UP;
+			}
+
 		}
 
 		if (weightRight != 0 &&
 				weightRight < weightUp &&
 				weightRight < weightDown &&
 				weightRight < weightLeft) {
-			return MOVE_RIGHT;
+			if (isObstacleOnDirection(vision, MAP_RIGHT)) {
+				return checkEmptyCells(vision);
+			} else {
+				return MOVE_RIGHT;
+			}
 		}
 
 		if (weightDown != 0 &&
 				weightDown < weightUp &&
 				weightDown < weightRight &&
 				weightDown < weightLeft) {
-			return MOVE_DOWN;
+			if (isObstacleOnDirection(vision, MAP_DOWN)) {
+				return checkEmptyCells(vision);
+			} else {
+				return MOVE_DOWN;
+			}
 		}
 
 		if (weightLeft != 0 &&
 				weightLeft < weightUp &&
 				weightLeft < weightRight &&
 				weightLeft < weightDown) {
-			return MOVE_LEFT;
+			if (isObstacleOnDirection(vision, MAP_LEFT)) {
+				return checkEmptyCells(vision);
+			} else {
+				return MOVE_LEFT;
+			}
 		}
 
 
@@ -484,6 +498,116 @@ public class Ladrao extends ProgramaLadrao {
 		return vision[direction] == WALL || vision[direction] == COIN || vision[direction] == POWER_TABLETS
 				|| vision[direction] == BANK || vision[direction] == THIEF
 				|| vision[direction] == NO_VISION;
+	}
+
+	private int checkEmptyCells(int[] vision) {
+		boolean visited;
+		boolean isUpFree = false;
+		boolean isRightFree = false;
+		boolean isDownFree = false;
+		boolean isLeftFree = false;
+
+
+
+		if (vision[MAP_UP] == NO_AGENT)
+			isUpFree = true;
+
+		if (vision[MAP_RIGHT] == NO_AGENT)
+			isRightFree = true;
+
+		if (vision[MAP_DOWN] == NO_AGENT)
+			isDownFree = true;
+
+		if (vision[MAP_LEFT] == NO_AGENT)
+			isLeftFree = true;
+
+
+		if(isUpFree) {
+			visited = isCellAlreadyVisited(position, MAP_UP);
+			if (visited) {
+				if (isRightFree) {
+					visited = isCellAlreadyVisited(position, MAP_RIGHT);
+					if (visited) {
+						if (isDownFree) {
+							visited = isCellAlreadyVisited(position, MAP_DOWN);
+							if (visited) {
+								if (isLeftFree) {
+									return MOVE_LEFT;
+								} else {
+									return Randomizer.generate(1, 4);
+								}
+							} else {
+								return MOVE_DOWN;
+							}
+						}
+					} else {
+						return MOVE_RIGHT;
+					}
+				}
+			}
+			return MOVE_UP;
+		}
+
+		if(isRightFree) {
+			visited = isCellAlreadyVisited(position, MAP_RIGHT);
+			if (visited) {
+				if (isDownFree) {
+					visited = isCellAlreadyVisited(position, MAP_DOWN);
+					if (visited) {
+						if (isLeftFree) {
+							return MOVE_LEFT;
+						} else {
+							return Randomizer.generate(1, 3);
+						}
+					} else {
+						return MOVE_DOWN;
+					}
+				}
+			}
+			return MOVE_RIGHT;
+		}
+
+		if(isDownFree) {
+			visited = isCellAlreadyVisited(position, MAP_DOWN);
+			if (visited) {
+				return MOVE_LEFT;
+			}
+			return MOVE_DOWN;
+		}
+
+		if (isLeftFree) {
+			return MOVE_LEFT;
+		}
+
+		return Randomizer.generate(1, 4);
+	}
+
+	private boolean isCellAlreadyVisited(Point position, int direction) {
+		if (direction == MAP_UP) {
+			if (map[position.y -1][position.x] >= 1) {
+				return true;
+			}
+		}
+
+		if (direction == MAP_RIGHT) {
+			if (map[position.y][position.x + 1] >= 1) {
+				return true;
+			}
+		}
+
+		if (direction == MAP_DOWN) {
+			if (map[position.y + 1][position.x] >= 1) {
+				return true;
+			}
+		}
+
+		if (direction == MAP_LEFT) {
+			return map[position.y][position.x - 1] >= 1;
+		}
+
+
+
+		return false;
 	}
 
 	// -------------------------------------------------------------

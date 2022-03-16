@@ -12,7 +12,7 @@ public class Ladrao extends ProgramaLadrao {
 	static int thiefExp4 = 0;
 
 	// Map to be used in the future to store information about the game.
-	private final int[][] map = new int[30][30];
+	private int[][] map = new int[30][30];
 	// Thief vision
     // Thief current position
 	Point position;
@@ -47,10 +47,17 @@ public class Ladrao extends ProgramaLadrao {
 	int[] smell = new int[8];
 
 	int counter = 0;
+	int playCounter = 0;
 	int thiefIndex = -1;
 
 
 	public int acao() {
+//		Resetting memory after 100 plays
+		playCounter++;
+		if (playCounter%200 == 0) {
+			resetMap();
+		}
+
 		thiefIndex++;
 		if (thiefIndex > 3) {
 			thiefIndex = 0;
@@ -73,14 +80,14 @@ public class Ladrao extends ProgramaLadrao {
 		if (lastPosition != null &&
 				position.x == lastPosition.x &&
 				position.y == lastPosition.y)
-			counter = 5;
+			counter = 6;
 
 		lastPosition = position;
 
 		if (counter > 0)
 			counter--;
 
-		if (isSaverNearBy && counter == 0) {
+		if (isSaverNearBy) {
 			return steal(vision);
 		}
 
@@ -92,7 +99,7 @@ public class Ladrao extends ProgramaLadrao {
 			return chaseSaverBySmell(smell);
 		}
 
-		if (isThiefNear) {
+		if (isThiefNear && counter == 0) {
 			return chaseThief(vision);
 		}
 		return evaluateMove();
@@ -626,6 +633,10 @@ public class Ladrao extends ProgramaLadrao {
 	private int[] getSmell() {
 		smell = sensor.getAmbienteOlfatoPoupador();
 		return smell;
+	}
+
+	private void resetMap() {
+		map = new int[30][30];
 	}
 
 	public static class Randomizer {
